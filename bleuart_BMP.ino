@@ -92,7 +92,7 @@ Adafruit_BluefruitLE_SPI ble(BLUEFRUIT_SPI_CS, BLUEFRUIT_SPI_IRQ, BLUEFRUIT_SPI_
 
 //create the sensor instance
 Adafruit_BMP085 bmp;
-
+bool debug = FALSE; // global debug flag for serial output
 
 // A small helper
 void error(const __FlashStringHelper*err) {
@@ -108,28 +108,32 @@ void error(const __FlashStringHelper*err) {
 /**************************************************************************/
 void setup(void)
 {
-  //going headless ********************************
-  /*
+  
   while (!Serial);  // required for Flora & Micro
   delay(500);
 
   Serial.begin(115200);
-  Serial.println(F("Adafruit Bluefruit Command Mode Example"));
-  Serial.println(F("---------------------------------------"));
-
-  /* Initialise the module */
-  //Serial.print(F("Initialising the Bluefruit LE module: "));
+  if ( debug )
+  {
+  
+	Serial.println(F("Adafruit Bluefruit Command Mode Example"));
+	Serial.println(F("---------------------------------------"));
+	Serial.print(F("Initialising the Bluefruit LE module: "));
+  }
 
   if ( !ble.begin(VERBOSE_MODE) )
   {
     error(F("Couldn't find Bluefruit, make sure it's in CoMmanD mode & check wiring?"));
   }
-  //Serial.println( F("OK!") );
+  if(debug){Serial.println( F("OK!") );}
 
   if ( FACTORYRESET_ENABLE )
   {
     /* Perform a factory reset to make sure everything is in a known state */
-    //Serial.println(F("Performing a factory reset: "));
+    if(debug)
+	{
+		Serial.println(F("Performing a factory reset: "));
+	}
     if ( ! ble.factoryReset() ){
       error(F("Couldn't factory reset"));
     }
@@ -139,31 +143,42 @@ void setup(void)
   /* Disable command echo from Bluefruit */
   ble.echo(false);
 
-  //Serial.println("Requesting Bluefruit info:");
+  if(debug)
+  {
+	Serial.println("Requesting Bluefruit info:");
+  }
   /* Print Bluefruit information */
   ble.info();
   
-  //Serial.println(F("Starting BMP180 connection"));
+  if(debug)
+  {
+	Serial.println(F("Starting BMP180 connection"));
+  }
   if (!bmp.begin()){
-    //Serial.println(F("Could Not connect to BMP180 sensor."));
+	if(debug)
+	{
+		Serial.println(F("Could Not connect to BMP180 sensor."));
+		Serial.println(F("Please check wiring and reboot."));
+	}
     while (1){}
   }
-  /* headless no debug
-  Serial.println(F("Connected to sensor."));
-  Serial.print("Temperature = ");
-  Serial.print(bmp.readTemperature());
-  Serial.println(" *C");
-    
-  Serial.print("Pressure = ");
-  Serial.print(bmp.readPressure());
-  Serial.println(" Pa");
-  Serial.println(F("*******************************"));
-  Serial.println(F("Please use Adafruit Bluefruit LE app to connect in UART mode"));
-  Serial.println(F("Then Enter characters to send to Bluefruit"));
-  Serial.println();
+  if(debug)
+  {
+	Serial.println(F("Connected to sensor."));
+	Serial.print("Temperature = ");
+	Serial.print(bmp.readTemperature());
+	Serial.println(" *C");
+		
+	Serial.print("Pressure = ");
+	Serial.print(bmp.readPressure());
+	Serial.println(" Pa");
+	Serial.println(F("*******************************"));
+	Serial.println(F("Please use Adafruit Bluefruit LE app to connect in UART mode"));
+	Serial.println(F("Then Enter characters to send to Bluefruit"));
+	Serial.println();
 
-  ble.verbose(false);  // debug info is a little annoying after this point!
-
+    ble.verbose(false);  // debug info is a little annoying after this point!
+  }
   /* Wait for connection */
   while (! ble.isConnected()) {
       delay(500);
@@ -173,10 +188,10 @@ void setup(void)
   if ( ble.isVersionAtLeast(MINIMUM_FIRMWARE_VERSION) )
   {
     // Change Mode LED Activity
-    //Serial.println(F("******************************"));
-    //Serial.println(F("Change LED activity to " MODE_LED_BEHAVIOUR));
+    Serial.println(F("******************************"));
+    Serial.println(F("Change LED activity to " MODE_LED_BEHAVIOUR));
     ble.sendCommandCheckOK("AT+HWModeLED=" MODE_LED_BEHAVIOUR);
-    //Serial.println(F("******************************"));
+    Serial.println(F("******************************"));
   } 
   
 }
@@ -193,16 +208,21 @@ void loop(void)
 
   if ( getUserInput(inputs, BUFSIZE) )
   {
-    // Send characters to Bluefruit
-    //Serial.print("[Send] ");
-    //Serial.println(inputs);
-
+	if(debug)
+	{
+		// Send characters to Bluefruit
+		Serial.print("[Send] ");
+		Serial.println(inputs);
+	}
     ble.print("AT+BLEUARTTX=");
     ble.println(inputs);
 
     // check response stastus
     if (! ble.waitForOK() ) {
-      //Serial.println(F("Failed to send?"));
+		if(debug)
+		{
+			Serial.println(F("Failed to send?"));
+		}
     }
   }
 
@@ -214,7 +234,11 @@ void loop(void)
     return;
   }
   // Some data was found, its in the buffer
-  //Serial.print(F("[Recv] ")); Serial.println(ble.buffer);
+  if(debug)
+  {
+	Serial.print(F("[Recv] ")); 
+	Serial.println(ble.buffer);
+  }
   if ( strcmp(ble.buffer, "get") == 0 ) {
       WritePressure();
     }
@@ -235,17 +259,23 @@ void WritePressure()
   ble.print(((bmp.readTemperature()*1.8)+32));
   ble.println(" *F           ");
   ble.waitForOK();
-  /*Serial.print("[SENT] Temperature = ");
-  Serial.print(bmp.readTemperature());
-  Serial.println(" *C");*/
+  if(debug)
+  {
+	Serial.print("[SENT] Temperature = ");
+	Serial.print(bmp.readTemperature());
+	Serial.println(" *C");
+  }
   ble.print("AT+BLEUARTTX=Pressure = ");
   ble.print(((float)bmp.readPressure()/3386.375258));
   ble.println(" inHg");
   ble.println();
   ble.waitForOK();
-  /*Serial.print("[SENT] Pressure = ");
-  Serial.print(bmp.readPressure());
-  Serial.println(" Pa");*/
+  if(debug)
+  {
+	Serial.print("[SENT] Pressure = ");
+	Serial.print(bmp.readPressure());
+	Serial.println(" Pa");
+  }
 }
 
 /**************************************************************************/
