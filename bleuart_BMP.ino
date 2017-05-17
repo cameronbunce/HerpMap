@@ -92,7 +92,7 @@ Adafruit_BluefruitLE_SPI ble(BLUEFRUIT_SPI_CS, BLUEFRUIT_SPI_IRQ, BLUEFRUIT_SPI_
 
 //create the sensor instance
 Adafruit_BMP085 bmp;
-bool debug = FALSE; // global debug flag for serial output
+bool debug = 0    ; // global debug flag for serial output
 
 // A small helper
 void error(const __FlashStringHelper*err) {
@@ -176,9 +176,10 @@ void setup(void)
 	Serial.println(F("Please use Adafruit Bluefruit LE app to connect in UART mode"));
 	Serial.println(F("Then Enter characters to send to Bluefruit"));
 	Serial.println();
-
-    ble.verbose(false);  // debug info is a little annoying after this point!
   }
+
+  ble.verbose(false);  // debug info is a little annoying after this point!
+  
   /* Wait for connection */
   while (! ble.isConnected()) {
       delay(500);
@@ -239,9 +240,32 @@ void loop(void)
 	Serial.print(F("[Recv] ")); 
 	Serial.println(ble.buffer);
   }
-  if ( strcmp(ble.buffer, "get") == 0 ) {
+  if ( strcmp(ble.buffer, "get") == 0 )
+  {
       WritePressure();
-    }
+  }
+  else if (strcmp(ble.buffer, "Get") == 0 )
+  {
+      WritePressure();
+  }
+  else if (strcmp(ble.buffer, "debug") ==0 )
+  {
+    debug=1;
+    Serial.println(F("[Debug mode enabled from BLEUART]"));
+  }
+  else if (strcmp(ble.buffer, "quiet") == 0)
+  {
+    debug=0;
+    Serial.println(F("[Debug mode disabled from BLEUART]"));
+  }
+  else if (strcmp(ble.buffer, "help") ==0)
+  {
+    printHelp();
+  }
+  else if (strcmp(ble.buffer, "name") ==0)
+  {
+    GAPDEVrenamer();
+  }
   
   ble.waitForOK();
   
@@ -276,6 +300,73 @@ void WritePressure()
 	Serial.print(bmp.readPressure());
 	Serial.println(" Pa");
   }
+}
+void GAPDEVrenamer()
+{
+  /*something in this makes the whole thing hang
+  bothPrintln("enter text to set device name");
+  // Check for incoming characters from Bluefruit
+  ble.println("AT+BLEUARTRX");
+  ble.readline();
+  if (strcmp(ble.buffer, "OK") == 0) {
+    // no data
+    return;
+  }
+  // Some data was found, its in the buffer
+  if(debug)
+  {
+  Serial.print(F("[Recv] ")); 
+  Serial.println(ble.buffer);
+  }
+  ble.waitForOK();
+  ble.println(sprintf("AT+GAPDEVNAME=", "%s", ble.buffer));
+  */
+}
+void bothPrintln( char printthis[])
+{
+  ble.println(sprintf("AT+BLEUARTTX=", "%s", printthis));
+  if(debug){Serial.println(printthis);}
+}
+void printHelp()
+{
+  ble.waitForOK();
+  ble.println(F("AT+BLEUARTTX=******************          "));
+  ble.println(F("AT+BLEUARTTX=This is the help file for the BLE-UART interfaced BMP180 "));
+  ble.waitForOK();
+  ble.println(F("AT+BLEUARTTX=Barometric pressure sensor built with components from Adafruit. "));
+  ble.waitForOK();
+  ble.println(F("AT+BLEUARTTX=More information is available at the GitHub page for this project "));
+  ble.waitForOK();
+  ble.println(F("AT+BLEUARTTX= https://github.com/cameronbunce/bleuart_BMP "));
+  ble.waitForOK();
+  ble.println(F("AT+BLEUARTTX="));
+  ble.waitForOK();
+  ble.println(F("AT+BLEUARTTX=The current command set is limited, but includes the following:"));
+  ble.waitForOK();
+  ble.println(F("AT+BLEUARTTX=----------------------------"));
+  ble.waitForOK();
+  ble.println(F("AT+BLEUARTTX=help  - shows this help file  "));
+  ble.waitForOK();
+  ble.println(F("AT+BLEUARTTX=get   - returns current temperature and pressure sensor readings  "));
+  ble.waitForOK();
+  ble.println(F("AT+BLEUARTTX=debug - prints all BLE communication and diagnostics to USB/Serial  "));
+  ble.waitForOK();
+  ble.println(F("AT+BLEUARTTX=quiet - toggles debug mode off  "));
+  ble.waitForOK();
+  ble.println(F("AT+BLEUARTTX=----- none of the commands take any arguments  "));
+  ble.waitForOK();
+  Serial.println(F("This is the help file for the BLE-UART interfaced BMP180"));
+  Serial.println(F("Barometric pressure sensor built with components from Adafruit"));
+  Serial.println(F("More information is available at the GitHub page for this project"));
+  Serial.println(F("https://github.com/cameronbunce/bleuart_BMP"));
+  Serial.println(F(""));
+  Serial.println(F("current command set is limited, but includes the following:"));
+  Serial.println(F("----------------------------"));
+  Serial.println(F("help  - shows this help file"));
+  Serial.println(F("get   - returns current temperature and pressure sensor readings"));
+  Serial.println(F("debug - prints all BLE communication and diagnostics to USB/Serial"));
+  Serial.println(F("quiet - toggles debug mode off"));
+  Serial.println(F("----- none of the commands takes any arguments"));
 }
 
 /**************************************************************************/
